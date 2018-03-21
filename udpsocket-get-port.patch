@@ -1,0 +1,43 @@
+--- ip/UdpSocket.h	2014-01-04 16:45:36.000000000 -0500
++++ ip/UdpSocket.h	2014-01-04 16:49:25.000000000 -0500
+@@ -126,6 +126,8 @@
+ 	bool IsBound() const;
+ 
+     std::size_t ReceiveFrom( IpEndpointName& remoteEndpoint, char *data, std::size_t size );
++
++	int Port() const;
+ };
+ 
+ 
+--- ip/posix/UdpSocket.cpp	2014-01-04 16:45:36.000000000 -0500
++++ ip/posix/UdpSocket.cpp	2014-01-04 16:48:44.000000000 -0500
+@@ -246,6 +246,17 @@
+ 		return (std::size_t)result;
+ 	}
+ 
++	int Port() const
++	{
++		struct sockaddr_in sockAddr;
++		std::memset( (char *)&sockAddr, 0, sizeof(sockAddr ) );
++		socklen_t length = sizeof(sockAddr);
++		if (getsockname(socket_, (struct sockaddr *)&sockAddr, &length) < 0) {
++			throw std::runtime_error("unable to getsockname\n");
++		}
++		return ntohs(sockAddr.sin_port);
++	}
++
+ 	int Socket() { return socket_; }
+ };
+ 
+@@ -304,6 +315,11 @@
+ 	return impl_->ReceiveFrom( remoteEndpoint, data, size );
+ }
+ 
++int UdpSocket::Port() const
++{
++	return impl_->Port();
++}
++
+ 
+ struct AttachedTimerListener{
+ 	AttachedTimerListener( int id, int p, TimerListener *tl )
