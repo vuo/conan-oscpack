@@ -34,6 +34,8 @@ class OscPackConan(ConanFile):
         # http://web.archive.org/web/20170102013425/https://code.google.com/archive/p/oscpack/issues/15
         tools.patch(patch_file='udpsocket-get-port.patch', base_path=self.source_dir)
 
+        self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
+
     def build(self):
         tools.mkdir(self.install_dir)
         tools.mkdir('%s/lib' % self.install_dir)
@@ -46,6 +48,8 @@ class OscPackConan(ConanFile):
     def package(self):
         self.copy('*.h',     src='%s/include' % self.install_dir, dst='include')
         self.copy('*.dylib', src='%s/lib'     % self.install_dir, dst='lib')
+
+        self.copy('%s.txt' % self.name, src=self.source_dir, dst='license')
 
     def package_info(self):
         self.cpp_info.libs = ['oscpack']
