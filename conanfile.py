@@ -39,6 +39,9 @@ class OscPackConan(ConanFile):
                                   '	$(CXX) -dynamiclib -Wl,-install_name,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc',
                                   '	$(CXX) -dynamiclib -Wl,-install_name,@rpath/liboscpack.dylib -Oz -mmacosx-version-min=10.10 -stdlib=libc++ -o $(LIBFILENAME) $(LIBOBJECTS) -lc')
             tools.replace_in_file('Makefile',
+                                  '	$(CXX) -shared -Wl,-soname,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc',
+                                  '	$(CXX) -shared -Wl,-soname,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc -stdlib=libc++')
+            tools.replace_in_file('Makefile',
                                   '	@ldconfig',
                                   '	echo skipping ldconfig')
 
