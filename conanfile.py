@@ -9,7 +9,7 @@ class OscPackConan(ConanFile):
     package_version = '2'
     version = '%s-%s' % (source_version, package_version)
 
-    requires = 'llvm/3.3-2@vuo/stable'
+    build_requires = 'llvm/3.3-5@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.rossbencina.com/code/oscpack'
     license = 'http://www.rossbencina.com/code/oscpack'
