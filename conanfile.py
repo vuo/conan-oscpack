@@ -24,6 +24,8 @@ class OscPackConan(ConanFile):
         elif platform.system() == 'Linux':
             flags = '-fPIC'
 
+        flags += ' -I' + ' -I'.join(self.deps_cpp_info['llvm'].include_paths)
+
         self.run("git clone https://github.com/vuo/oscpack.git")
         with tools.chdir(self.source_dir):
             self.run("git checkout facab13")
@@ -32,10 +34,10 @@ class OscPackConan(ConanFile):
                                   'CXX := %s' % self.deps_cpp_info['llvm'].rootpath + '/bin/clang++')
             tools.replace_in_file('Makefile',
                                   'COPTS  := -Wall -Wextra -O3',
-                                  'COPTS  := -Wall -Wextra -Oz -stdlib=libstdc++ ' + flags)
+                                  'COPTS  := -Wall -Wextra -Oz -stdlib=libc++ ' + flags)
             tools.replace_in_file('Makefile',
                                   '	$(CXX) -dynamiclib -Wl,-install_name,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc',
-                                  '	$(CXX) -dynamiclib -Wl,-install_name,@rpath/liboscpack.dylib -Oz -mmacosx-version-min=10.10 -stdlib=libstdc++ -o $(LIBFILENAME) $(LIBOBJECTS) -lc')
+                                  '	$(CXX) -dynamiclib -Wl,-install_name,@rpath/liboscpack.dylib -Oz -mmacosx-version-min=10.10 -stdlib=libc++ -o $(LIBFILENAME) $(LIBOBJECTS) -lc')
             tools.replace_in_file('Makefile',
                                   '	@ldconfig',
                                   '	echo skipping ldconfig')
