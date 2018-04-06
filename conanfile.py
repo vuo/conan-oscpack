@@ -6,7 +6,7 @@ class OscPackConan(ConanFile):
 
     # There are no tagged releases, so just use package_version.
     source_version = '0'
-    package_version = '2'
+    package_version = '3'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = 'llvm/3.3-5@vuo/stable'
