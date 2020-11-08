@@ -1,4 +1,5 @@
-from conans import ConanFile, tools
+from conans import ConanFile, CMake, tools
+import os
 import platform
 
 class OscPackConan(ConanFile):
@@ -6,44 +7,29 @@ class OscPackConan(ConanFile):
 
     # There are no tagged releases, so just use package_version.
     source_version = '0'
-    package_version = '3'
+    package_version = '4'
     version = '%s-%s' % (source_version, package_version)
 
-    build_requires = 'llvm/3.3-5@vuo/stable'
+    build_requires = (
+        'llvm/5.0.2-1@vuo/stable',
+        'macos-sdk/11.0-0@vuo/stable',
+    )
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.rossbencina.com/code/oscpack'
     license = 'http://www.rossbencina.com/code/oscpack'
     description = 'A cross-platform library for packing and unpacking OSC packets'
     source_dir = 'oscpack'
-    install_dir = '_install'
+    generators = 'cmake'
+    build_dir = '_build'
     exports_sources = '*.patch'
 
     def source(self):
-        if platform.system() == 'Darwin':
-            flags = '-mmacosx-version-min=10.10'
-        elif platform.system() == 'Linux':
-            flags = '-fPIC'
-
-        flags += ' -I' + ' -I'.join(self.deps_cpp_info['llvm'].include_paths)
-
         self.run("git clone https://github.com/vuo/oscpack.git")
         with tools.chdir(self.source_dir):
             self.run("git checkout facab13")
-            tools.replace_in_file('Makefile',
-                                  'CXX := g++',
-                                  'CXX := %s' % self.deps_cpp_info['llvm'].rootpath + '/bin/clang++')
-            tools.replace_in_file('Makefile',
-                                  'COPTS  := -Wall -Wextra -O3',
-                                  'COPTS  := -Wall -Wextra -Oz -stdlib=libc++ ' + flags)
-            tools.replace_in_file('Makefile',
-                                  '	$(CXX) -dynamiclib -Wl,-install_name,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc',
-                                  '	$(CXX) -dynamiclib -Wl,-install_name,@rpath/liboscpack.dylib -Oz -mmacosx-version-min=10.10 -stdlib=libc++ -o $(LIBFILENAME) $(LIBOBJECTS) -lc')
-            tools.replace_in_file('Makefile',
-                                  '	$(CXX) -shared -Wl,-soname,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc',
-                                  '	$(CXX) -shared -Wl,-soname,$(LIBSONAME) -o $(LIBFILENAME) $(LIBOBJECTS) -lc -stdlib=libc++')
-            tools.replace_in_file('Makefile',
-                                  '	@ldconfig',
-                                  '	echo skipping ldconfig')
+            tools.replace_in_file('CMakeLists.txt',
+                                  'ADD_LIBRARY(oscpack',
+                                  'ADD_LIBRARY(oscpack SHARED')
 
         # http://web.archive.org/web/20170102013425/https://code.google.com/archive/p/oscpack/issues/15
         tools.patch(patch_file='udpsocket-get-port.patch', base_path=self.source_dir)
@@ -51,17 +37,24 @@ class OscPackConan(ConanFile):
         self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
 
     def build(self):
-        tools.mkdir(self.install_dir)
-        tools.mkdir('%s/lib' % self.install_dir)
-        with tools.chdir(self.source_dir):
-            self.run('make install PREFIX=../%s' % self.install_dir)
+        cmake = CMake(self)
+        cmake.definitions['CONAN_DISABLE_CHECK_COMPILER'] = True
+        cmake.definitions['CMAKE_BUILD_TYPE'] = 'Release'
+        cmake.definitions['CMAKE_CXX_COMPILER'] = self.deps_cpp_info['llvm'].rootpath + '/bin/clang++'
+        cmake.definitions['CMAKE_C_COMPILER']   = self.deps_cpp_info['llvm'].rootpath + '/bin/clang'
+        cmake.definitions['CMAKE_C_FLAGS'] = cmake.definitions['CMAKE_CXX_FLAGS'] = '-Oz -DNDEBUG'
+        cmake.definitions['CMAKE_INSTALL_NAME_DIR'] = '@rpath'
+        cmake.definitions['CMAKE_OSX_ARCHITECTURES'] = 'x86_64;arm64'
+        cmake.definitions['CMAKE_OSX_DEPLOYMENT_TARGET'] = '10.11'
+        cmake.definitions['CMAKE_OSX_SYSROOT'] = self.deps_cpp_info['macos-sdk'].rootpath
 
-        with tools.chdir('%s/lib' % self.install_dir):
-            self.run('rm liboscpack.so')
-            if platform.system() == 'Darwin':
-                self.run('mv liboscpack.so.1.1.0 liboscpack.dylib')
-            elif platform.system() == 'Linux':
-                self.run('mv liboscpack.so.1.1.0 liboscpack.so')
+        tools.mkdir(self.build_dir)
+        with tools.chdir(self.build_dir):
+            cmake.configure(source_dir='../%s' % self.source_dir,
+                            build_dir='.',
+                            args=['-Wno-dev', '--no-warn-unused-cli'])
+            cmake.build(target='oscpack')
+            self.run('install_name_tool -id @rpath/liboscpack.dylib liboscpack.dylib')
 
     def package(self):
         if platform.system() == 'Darwin':
@@ -69,8 +62,8 @@ class OscPackConan(ConanFile):
         elif platform.system() == 'Linux':
             libext = 'so'
 
-        self.copy('*.h',     src='%s/include' % self.install_dir, dst='include')
-        self.copy('liboscpack.%s' % libext, src='%s/lib' % self.install_dir, dst='lib')
+        self.copy('*.h', src=self.source_dir, dst='include/oscpack')
+        self.copy('liboscpack.%s' % libext, src=self.build_dir, dst='lib')
 
         self.copy('%s.txt' % self.name, src=self.source_dir, dst='license')
 
