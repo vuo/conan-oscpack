@@ -11,8 +11,8 @@ class OscPackConan(ConanFile):
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = (
-        'llvm/5.0.2-5@vuo/stable',
-        'macos-sdk/11.0-0@vuo/stable',
+        'llvm/5.0.2-5@vuo+conan+llvm/stable',
+        'macos-sdk/11.0-0@vuo+conan+macos-sdk/stable',
     )
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.rossbencina.com/code/oscpack'
