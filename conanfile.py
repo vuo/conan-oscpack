@@ -7,7 +7,7 @@ class OscPackConan(ConanFile):
 
     # The latest tag (`release_1_1_0`) refers to a nonexistent commit, so just use package_version.
     source_version = '0'
-    package_version = '4'
+    package_version = '5'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = (
@@ -33,6 +33,9 @@ class OscPackConan(ConanFile):
 
         # http://web.archive.org/web/20170102013425/https://code.google.com/archive/p/oscpack/issues/15
         tools.patch(patch_file='udpsocket-get-port.patch', base_path=self.source_dir)
+
+        tools.download('https://github.com/RossBencina/oscpack/pull/22.patch', '22.patch')
+        tools.patch(patch_file='22.patch', base_path=self.source_dir)
 
         self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
 
