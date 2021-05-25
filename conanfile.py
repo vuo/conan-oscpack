@@ -5,7 +5,7 @@ import platform
 class OscPackConan(ConanFile):
     name = 'oscpack'
 
-    # There are no tagged releases, so just use package_version.
+    # The latest tag (`release_1_1_0`) refers to a nonexistent commit, so just use package_version.
     source_version = '0'
     package_version = '4'
     version = '%s-%s' % (source_version, package_version)
@@ -24,9 +24,9 @@ class OscPackConan(ConanFile):
     exports_sources = '*.patch'
 
     def source(self):
-        self.run("git clone https://github.com/vuo/oscpack.git")
+        self.run("git clone https://github.com/RossBencina/oscpack.git")
         with tools.chdir(self.source_dir):
-            self.run("git checkout facab13")
+            self.run("git checkout 3e7e3a102e316d75fe176885a6dd08f216f2eac0")  # Latest commit as of 2021.05.24.
             tools.replace_in_file('CMakeLists.txt',
                                   'ADD_LIBRARY(oscpack',
                                   'ADD_LIBRARY(oscpack SHARED')
