@@ -4,7 +4,7 @@ import platform
 class OscPackTestConan(ConanFile):
     generators = 'cmake'
     requires = (
-        'llvm/5.0.2-1@vuo/stable',
+        'llvm/5.0.2-5@vuo/stable',
         'macos-sdk/11.0-0@vuo/stable',
     )
 
